@@ -1,3 +1,6 @@
+# CAS4106, 2023122004 김동욱
+# server.py
+
 import socket, sys
 from threading import Thread, Lock
 import time
@@ -41,29 +44,38 @@ def setup_sockets():
 
 def handle_producer(client_socket, addr):
     """Producer 연결을 처리하는 함수"""
+    client_file = None  # finally 블록에서 참조할 수 있도록 외부에 선언
     try:
+        # 소켓을 읽기 모드('r') 파일 객체로 -> \n을 만날 때까지 한 줄씩 읽을 수 있음
+        client_file = client_socket.makefile('r')
+        
         while is_running:
-            # Producer로부터 메시지 수신
-            data = client_socket.recv(1024).decode()
+            # recv(1024) 대신 readline()을 사용
+            data = client_file.readline()
             if not data:
                 break
             
             # CREATE 명령 처리
             if data.startswith('CREATE'):
-                parts = data.strip().split()
+                parts = data.strip().split() # data는 이미 \n으로 끝나는 한 줄임
                 if len(parts) == 4:
                     _, priority, task_id, duration = parts
                     priority = int(priority)
                     
-                    # 우선순위 큐에 작업 추가 (우선순위가 낮을수록 높은 우선순위)
+                    # 우선순위 큐에 작업 추가
                     with queue_lock:
                         heapq.heappush(priority_queue, (priority, task_id, duration))
                     
                     print(f"[CREATE] {priority} {task_id} {duration}")
+                
+                else: print(f"잘못된 형식의 CREATE 메시지 수신: {data.strip()}")
+                
     except Exception as e:
         print(f"[Error] Producer 처리 중 오류: {e}")
     finally:
-        client_socket.close()
+        if client_file:
+            client_file.close()
+        client_socket.close() 
 
 def handle_consumer(client_socket, addr):
     """Consumer 연결을 처리하는 함수"""
@@ -109,6 +121,8 @@ def handle_consumer(client_socket, addr):
     finally:
         client_socket.close()
         print(f"[{consumer_id} disconnected]")
+        with consumer_counter_lock:
+            consumer_counter -= 1
         print(f"{consumer_counter} consumers online")
 
 def producer_worker():
