@@ -44,7 +44,8 @@ def setup_sockets():
 
 def handle_producer(client_socket, addr):
     """Producer 연결을 처리하는 함수"""
-    # TCP 스트림 처리 문제 발생: 네트워크 버퍼에 의해 매우 짧은 기간 (거의 동시)에 전송된 데이터들이 하나로 합쳐져서 전송되는 것으로 추정되는 문제 발생.
+    # TCP 스트림 처리 문제 발생: 네트워크 버퍼에 의해 매우 짧은 기간 (거의 동시)에 
+    # 전송된 데이터들이 하나로 합쳐져서 전송되는 것으로 추정되는 문제 발생.
     # 이를 해결하기 위해 소켓을 읽기 모드('r') 파일 객체로 변환하여 한 줄씩 읽을 수 있도록 함.
     client_file = None  # finally 블록에서 참조할 수 있도록 외부에 선언
     try:
@@ -85,6 +86,7 @@ def handle_consumer(client_socket, addr):
     
     # Consumer에게 고유 ID 할당
     with consumer_counter_lock:
+        # Consumer 카운터 증가
         consumer_counter += 1
         consumer_id = f"Consumer{consumer_counter}"
     
@@ -123,6 +125,7 @@ def handle_consumer(client_socket, addr):
     finally:
         client_socket.close()
         print(f"[{consumer_id} disconnected]")
+        # Consumer 카운터 감소
         with consumer_counter_lock:
             consumer_counter -= 1
         print(f"{consumer_counter} consumers online")

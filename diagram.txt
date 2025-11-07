@@ -1,0 +1,52 @@
+PRODUCER(s)                 <-- (IP, P_Port) -->                  SERVER [server.py]           <-- (IP, C_Port) -->            CONSUMER(s)
+-----------                                                     ------------------                                           -------------
+[Start]                                                               [Start]
+  |                                                                     |
+(tasks.txt)                                                     [setup_sockets()]
+  |                                                        (Bind P_Port, C_Port)
+  |                                                                     |
+  |                                                [Start producer_worker (Thread 1)]
+  |                                                [Start consumer_worker (Thread 2)]
+  |                                                                     |
+[Connect P_Port] --------------------------------> [producer_worker: accept()]
+                                                                        |
+                                                            [Spawn handle_producer (Thread 3+)]
+                                                                        |
+[send CREATE]    --------------------------------> [handle_P: readline()]  <-- (TCP 스트림 문제 해결)
+                                                                        |
+                                                                  [queue_lock.acquire]
+                                                                        |
+                                                             ( ( (Priority Queue) ) )
+                                                                        |
+                                                                  [heappush(task)]
+                                                                        |
+                                                                  [queue_lock.release]
+                                                                        |
+[Loop & Exit]                                                           |
+                                                                        |
+                                                                        |
+                                                              [consumer_worker: accept()] <-------------------------------- [Connect C_Port]
+                                                                        |                                                          |
+                                                            [Spawn handle_consumer (Thread 4+)]                                    |
+                                                                        |                                                          [Start]
+                                                                        |                                                          |
+                                                                 [send(ConsumerID)]   --------------------------------> [recv(ConsumerID)]
+                                                                        |                                                          |
+                                                                        |                                                          |
+                                                                 [handle_C: recv(1024)] <-------------------------------- [send REQUEST]
+                                                                        |                                                          |
+                                                                  [queue_lock.acquire]                                           (Loop)
+                                                                        |                                                          |
+                                                             ( ( (Priority Queue) ) )                                              |
+                                                                        |                                                          |
+                                                                 [heappop() or NOTASK]                                             |
+                                                                        |                                                          |
+                                                                  [queue_lock.release]                                             |
+                                                                        |                                                          |
+                                                                 [send ASSIGN/NOTASK]   --------------------------------> [recv & Check]
+                                                                        |                                                          |
+                                                                        |                                                (if ASSIGN)
+                                                                        |                                                [sleep(duration)]
+                                                                        |                                                          |
+                                                                 [handle_C: recv(1024)] <-------------------------------- [send COMPLETE]
+                                                                 
