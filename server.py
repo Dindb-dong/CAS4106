@@ -44,20 +44,22 @@ def setup_sockets():
 
 def handle_producer(client_socket, addr):
     """Producer 연결을 처리하는 함수"""
+    # TCP 스트림 처리 문제 발생: 네트워크 버퍼에 의해 매우 짧은 기간 (거의 동시)에 전송된 데이터들이 하나로 합쳐져서 전송되는 것으로 추정되는 문제 발생.
+    # 이를 해결하기 위해 소켓을 읽기 모드('r') 파일 객체로 변환하여 한 줄씩 읽을 수 있도록 함.
     client_file = None  # finally 블록에서 참조할 수 있도록 외부에 선언
     try:
-        # 소켓을 읽기 모드('r') 파일 객체로 -> \n을 만날 때까지 한 줄씩 읽을 수 있음
+        # 소켓을 읽기 모드('r') 파일 객체로 변환
         client_file = client_socket.makefile('r')
         
         while is_running:
-            # recv(1024) 대신 readline()을 사용
+            # 한 줄씩 읽을 수 있도록 함
             data = client_file.readline()
             if not data:
                 break
             
             # CREATE 명령 처리
             if data.startswith('CREATE'):
-                parts = data.strip().split() # data는 이미 \n으로 끝나는 한 줄임
+                parts = data.strip().split()
                 if len(parts) == 4:
                     _, priority, task_id, duration = parts
                     priority = int(priority)
