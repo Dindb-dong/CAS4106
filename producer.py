@@ -1,3 +1,6 @@
+# CAS4106, 2023122004 김동욱
+# producer.py
+
 import socket, time, sys
 
 # 명령행 인자 파싱
