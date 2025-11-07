@@ -59,7 +59,7 @@ def handle_producer(client_socket, addr):
                     with queue_lock:
                         heapq.heappush(priority_queue, (priority, task_id, duration))
                     
-                    print(f"[CREATE] {task_id} priority={priority} duration={duration}")
+                    print(f"[CREATE] {priority} {task_id} {duration}")
     except Exception as e:
         print(f"[Error] Producer 처리 중 오류: {e}")
     finally:
@@ -78,7 +78,7 @@ def handle_consumer(client_socket, addr):
         # Consumer에게 ID 전송
         client_socket.send(consumer_id.encode())
         print(f"[{consumer_id} connected]")
-        
+        print(f"{consumer_counter} consumers online")
         while is_running:
             # Consumer로부터 REQUEST 메시지 수신
             data = client_socket.recv(1024).decode()
@@ -93,7 +93,7 @@ def handle_consumer(client_socket, addr):
                         # Consumer에게 작업 할당
                         message = f"ASSIGN {task_id} {duration}\n"
                         client_socket.send(message.encode())
-                        print(f"[ASSIGN] {task_id} to {consumer_id}")
+                        print(f"[ASSIGN] {task_id} - {consumer_id}")
                     else:
                         # 큐가 비어있으면 NOTASK 응답
                         client_socket.send(b'NOTASK\n')
@@ -109,6 +109,7 @@ def handle_consumer(client_socket, addr):
     finally:
         client_socket.close()
         print(f"[{consumer_id} disconnected]")
+        print(f"{consumer_counter} consumers online")
 
 def producer_worker():
     """Producer 연결을 받는 워커 스레드"""
@@ -144,7 +145,7 @@ def shutdown():
         producer_socket.close()
     if consumer_socket:
         consumer_socket.close()
-    print("[Server] 종료 중...")
+    print("exit")
 
 if __name__ == '__main__':
     setup_sockets()

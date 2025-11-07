@@ -31,7 +31,8 @@ for timestamp, priority, task_id, duration in tasks:
     # 서버에 CREATE 명령 전송
     message = f'CREATE {priority} {task_id} {duration}\n'
     sc.send(message.encode())
-    print(f'[CREATE] {task_id} priority={priority} duration={duration}')
+    print(f'[CREATE] {priority} {task_id} {duration}')
 
 # 모든 작업 전송 완료 후 연결 종료
+print("exit")
 sc.close()

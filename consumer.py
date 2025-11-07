@@ -3,7 +3,6 @@ import socket, time, sys
 # 명령행 인자 파싱
 host = sys.argv[1]
 port = int(sys.argv[2])
-worker_name = sys.argv[3]
 
 # 서버에 연결
 sc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,6 +15,7 @@ consumer_id = sc.recv(1024).decode().strip()
 while True:
     # 서버에 작업 요청
     sc.send(b'REQUEST\n')
+    print('[REQUEST]')
     
     # 서버로부터 응답 수신
     response = sc.recv(1024).decode().strip()
@@ -47,6 +47,10 @@ while True:
         # 기타 응답 처리
         print(response)
         time.sleep(1)
+        
+if KeyboardInterrupt:
+  print("exit")
+  sc.close()
 
 # 연결 종료
 sc.close()
